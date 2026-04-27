@@ -1,25 +1,29 @@
-
-    import streamlit as st
+from flask import Flask, render_template, request
 import pickle
 import numpy as np
+
+app = Flask(__name__)
 
 # Load model
 model = pickle.load(open("model.pkl", "rb"))
 
-# Title
-st.title("🚦 Traffic Signal Timing Prediction")
-
-st.write("Enter traffic conditions")
-
-# Inputs
-traffic = st.slider("Traffic Volume", 0, 500, 100)
-speed = st.slider("Average Speed (km/h)", 0, 60, 30)
-hour = st.slider("Hour", 0, 23, 12)
+# Home page
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 # Prediction
-if st.button("Predict"):
-    input_data = np.array([[traffic, speed, hour]])
-    prediction = model.predict(input_data)
+@app.route("/predict", methods=["POST"])
+def predict():
+    traffic = float(request.form["traffic"])
+    speed = float(request.form["speed"])
+    hour = float(request.form["hour"])
 
-    st.success(f"Green Signal Time: {prediction[0]:.2f} sec")
-    
+    features = np.array([[traffic, speed, hour]])
+    prediction = model.predict(features)
+
+    return render_template("index.html",
+                           prediction_text=f"Green Signal Time: {prediction[0]:.2f} sec")
+
+if __name__ == "__main__":
+    app.run(debug=True)
